@@ -129,7 +129,7 @@ async function run() {
 
     // users api
     // verifyFBToken, verifyAdmin,
-    app.get('/users', verifyFBToken, async (req, res) => {
+    app.get('/users', async (req, res) => {
       try {
         const { search, role, page: pageQuery, limit: limitQuery } = req.query;
         const requesterEmail = req.decoded.email;
@@ -177,35 +177,89 @@ async function run() {
     });
 
     // Add or update the POST /users endpoint to enforce default role 'student'
-    app.post('/users', async (req, res) => {
+    // POST /api/auth/register
+    app.post('/register', async (req, res) => {
       try {
-        const userData = req.body;
-        if (!userData.email) {
-          return res.status(400).send({ message: 'Email is required' });
+        const { name, email, password, role, dateOfBirth, companyName, companyLogo } = req.body;
+
+        // Validation
+        if (!email || !password || !role) {
+          return res.status(400).json({
+            success: false,
+            message: 'Email, password and role are required'
+          });
         }
-        // Set default role to 'student' if not provided
-        if (!userData.role) {
-          userData.role = 'student';
+
+        // Check if user already exists
+        const existingUser = await usersCollection.findOne({ email });
+        if (existingUser) {
+          return res.status(400).json({
+            success: false,
+            message: 'User already exists'
+          });
         }
-        // Prepare user document with all fields
-        const userDocument = {
-          email: userData.email,
-          name: userData.name || userData.displayName || '',
-          photoURL: userData.photoURL || '',
-          role: userData.role,
-          created_at: userData.created_at || new Date().toISOString(),
-          last_log_in: userData.last_log_in || new Date().toISOString(),
+
+        // Hash password
+        // const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Base user object
+        const newUser = {
+          name,
+          email,
+          password: password,
+          role,
+          dateOfBirth,
+          profileImage: '',
+          createdAt: new Date(),
+          updatedAt: new Date()
         };
-        // Upsert user (update if exists, insert if not)
-        const result = await usersCollection.updateOne(
-          { email: userData.email },
-          { $setOnInsert: userDocument },
-          { upsert: true }
-        );
-        res.send({ success: true, result });
+
+        // Role-specific fields
+        if (role === 'hr') {
+          if (!companyName) {
+            return res.status(400).json({
+              success: false,
+              message: 'Company name is required for HR'
+            });
+          }
+
+          newUser.companyName = companyName;
+          newUser.companyLogo = companyLogo || '';
+          newUser.packageLimit = 5; // Default
+          newUser.currentEmployees = 0; // Start with 0
+          newUser.subscription = 'basic';
+
+        } else if (role === 'employee') {
+          // Employee for company fields
+          // just base fields 
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid role. Must be "employee" or "hr"'
+          });
+        }
+
+        // Insert user
+        const result = await usersCollection.insertOne(newUser);
+
+        res.status(201).json({
+          success: true,
+          message: 'User registered successfully',
+          user: {
+            _id: result.insertedId,
+            name: newUser.name,
+            email: newUser.email,
+            role: newUser.role,
+            companyName: newUser.companyName || null
+          },
+        });
+
       } catch (error) {
-        console.error('Error creating user:', error);
-        res.status(500).send({ message: 'Failed to create user' });
+        console.error('Registration error:', error);
+        res.status(500).json({
+          success: false,
+          message: 'Server error during registration'
+        });
       }
     });
 
