@@ -1,5 +1,5 @@
 {
-  "name": "edu-sync-server",
+  "name": "Asset-sync-server",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -17,7 +17,7 @@
     "dotenv": "^17.0.1",
     "express": "^5.1.0",
     "firebase-admin": "^13.4.0",
-    "mongodb": "^6.17.0",
+    "mongodb": "^6.21.0",
     "stripe": "^18.3.0"
   }
 }

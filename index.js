@@ -32,7 +32,7 @@ const client = new MongoClient(process.env.MONGODB_URI, {
 async function run() {
   try {
     // Database collections
-    const db = client.db("eduSyncDB");
+    const db = client.db("AssetSyncDB");
     const usersCollection = db.collection("users");
     const notesCollection = db.collection("notes");
     const sessionsCollection = db.collection("sessions");
@@ -1230,7 +1230,7 @@ async function run() {
         // Average rating (across all reviews)
         const allReviews = await reviewsCollection.find({}).toArray();
         const averageRating = allReviews.length > 0
-          ? (allReviews.reduce((sum, r) => sum + (Number(r.rating) || 0), 0) / allReviews.length).toFixed(2)
+          ? (allReviews.rAssetce((sum, r) => sum + (Number(r.rating) || 0), 0) / allReviews.length).toFixed(2)
           : 0;
 
         res.send({
