@@ -43,35 +43,7 @@ async function run() {
 
     // --- Custom Middlewares ---
 
-    // 1. Verify Firebase Token
-    const verifyToken = async (req, res, next) => {
-      const authHeader = req.headers.authorization;
-      if (!authHeader) {
-        return res.status(401).send({ message: 'unauthorized access' });
-      }
-      const token = authHeader.split(' ')[1];
-      if (!token) {
-        return res.status(401).send({ message: 'unauthorized access' });
-      }
-      try {
-        const decoded = await admin.auth().verifyIdToken(token);
-        req.decoded = decoded;
-        next();
-      } catch (error) {
-        return res.status(403).send({ message: 'forbidden access' });
-      }
-    };
-
-    // 2. Verify HR Middleware (requires verifyToken first)
-    const verifyHR = async (req, res, next) => {
-      const email = req.decoded.email;
-      const user = await usersCollection.findOne({ email });
-      if (!user || user.role !== 'hr') {
-        return res.status(403).send({ message: 'forbidden access' });
-      }
-      next();
-    };
-
+   
     // --- Routes ---
 
     // 1. Authentication & Users
@@ -159,10 +131,33 @@ async function run() {
     // PUT /users/:id -> Update Profile
     app.put('/users/:id', verifyToken, async (req, res) => {
       const { id } = req.params;
-      const { name, profileImage } = req.body;
+      const {
+        name,
+        profileImage,
+        phoneNumber,
+        address,
+        bio,
+        website,
+        linkedin,
+        github,
+        facebook
+      } = req.body;
+      
+      // Build update object with only provided fields
+      const updateFields = { updatedAt: new Date() };
+      if (name !== undefined) updateFields.name = name;
+      if (profileImage !== undefined) updateFields.profileImage = profileImage;
+      if (phoneNumber !== undefined) updateFields.phoneNumber = phoneNumber;
+      if (address !== undefined) updateFields.address = address;
+      if (bio !== undefined) updateFields.bio = bio;
+      if (website !== undefined) updateFields.website = website;
+      if (linkedin !== undefined) updateFields.linkedin = linkedin;
+      if (github !== undefined) updateFields.github = github;
+      if (facebook !== undefined) updateFields.facebook = facebook;
+      
       const result = await usersCollection.updateOne(
         { _id: new ObjectId(id) },
-        { $set: { name, profileImage } }
+        { $set: updateFields }
       );
       res.send({ success: true, result });
     });
