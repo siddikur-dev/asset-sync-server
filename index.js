@@ -534,7 +534,7 @@ async function run() {
           },
         ],
         mode: 'payment',
-        success_url: `${successUrl}&session_id={CHECKOUT_SESSION_ID}`,
+        success_url: successUrl.includes('{CHECKOUT_SESSION_ID}') ? successUrl : `${successUrl}&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: cancelUrl,
         metadata: {
           hrEmail: req.decoded.email,
@@ -549,6 +549,11 @@ async function run() {
     // GET /payments/session/:sessionId (Verify Status)
     app.get('/payments/session/:sessionId', async (req, res) => {
       const { sessionId } = req.params;
+
+      // Validate session ID format
+      if (!sessionId || sessionId === '{CHECKOUT_SESSION_ID}') {
+        return res.status(400).send({ message: 'Invalid session ID' });
+      }
 
       try {
         const session = await stripe.checkout.sessions.retrieve(sessionId);
