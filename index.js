@@ -296,7 +296,7 @@ async function run() {
 
     // GET /requests (HR: all requests for their assets, Employee: their own requests)
     app.get('/requests', verifyToken, async (req, res) => {
-      const { email } = req.query; // Filter query param
+      const { email, page = 1, limit = 10 } = req.query; // Pagination query params
       const user = await usersCollection.findOne({ email: req.decoded.email });
 
       // Ensure user can only see their own relevant data
@@ -307,18 +307,83 @@ async function run() {
         query.requesterEmail = user.email;
       }
 
-      const requests = await requestsCollection.find(query).toArray();
-      res.send(requests);
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const skip = (pageNum - 1) * limitNum;
+
+      // Get total count for pagination
+      const totalRequests = await requestsCollection.countDocuments(query);
+      
+      // Get paginated requests
+      const requests = await requestsCollection.find(query)
+        .sort({ requestDate: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .toArray();
+
+      const totalPages = Math.ceil(totalRequests / limitNum);
+
+      res.send({
+        requests,
+        pagination: {
+          currentPage: pageNum,
+          totalPages,
+          totalRequests,
+          itemsPerPage: limitNum,
+          hasNextPage: pageNum < totalPages,
+          hasPrevPage: pageNum > 1
+        }
+      });
     });
 
     // GET /my-assets (Employee)
     app.get('/my-assets', verifyToken, async (req, res) => {
+      const { page = 1, limit = 10, search = '', type = 'all' } = req.query;
       const email = req.decoded.email;
-      const result = await requestsCollection.find({
+      
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const skip = (pageNum - 1) * limitNum;
+
+      // Build query
+      let query = {
         requesterEmail: email,
         requestStatus: { $in: ['approved', 'returned'] }
-      }).toArray();
-      res.send(result);
+      };
+
+      // Add search filter
+      if (search) {
+        query.assetName = { $regex: search, $options: 'i' };
+      }
+
+      // Add type filter
+      if (type !== 'all') {
+        query.assetType = type;
+      }
+
+      // Get total count for pagination
+      const totalAssets = await requestsCollection.countDocuments(query);
+      
+      // Get paginated assets
+      const assets = await requestsCollection.find(query)
+        .sort({ approvalDate: -1 })
+        .skip(skip)
+        .limit(limitNum)
+        .toArray();
+
+      const totalPages = Math.ceil(totalAssets / limitNum);
+
+      res.send({
+        assets,
+        pagination: {
+          currentPage: pageNum,
+          totalPages,
+          totalAssets,
+          itemsPerPage: limitNum,
+          hasNextPage: pageNum < totalPages,
+          hasPrevPage: pageNum > 1
+        }
+      });
     });
 
     // PATCH /requests/:id (Modified to handle permissions inside)
@@ -457,18 +522,32 @@ async function run() {
       res.send(teamUsers);
     });
 
-    // GET /my-employees (HR) - UPDATED with metadata
+    // GET /my-employees (HR) - UPDATED with metadata and pagination
     app.get('/my-employees', verifyToken, verifyHR, async (req, res) => {
+      const { page = 1, limit = 10 } = req.query;
       const hrEmail = req.decoded.email;
       const hrUser = await usersCollection.findOne({ email: hrEmail });
+
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+      const skip = (pageNum - 1) * limitNum;
 
       const affiliations = await employeeAffiliationsCollection.find({ hrEmail }).toArray();
       const employeeEmails = affiliations.map(a => a.employeeEmail);
 
+      // Get total count for pagination
+      const totalEmployees = await usersCollection.countDocuments(
+        { email: { $in: employeeEmails } }
+      );
+
+      // Get paginated employees
       const employees = await usersCollection.find(
         { email: { $in: employeeEmails } },
         { projection: { name: 1, email: 1, profileImage: 1, dateOfBirth: 1 } }
-      ).toArray();
+      )
+      .skip(skip)
+      .limit(limitNum)
+      .toArray();
 
       // Merge data
       const result = employees.map(emp => {
@@ -483,9 +562,14 @@ async function run() {
         };
       });
 
+      const totalPages = Math.ceil(totalEmployees / limitNum);
+
       res.send({
         employees: result,
-        totalEmployees: result.length,
+        totalEmployees,
+        totalPages,
+        currentPage: pageNum,
+        itemsPerPage: limitNum,
         packageLimit: hrUser.packageLimit || 5
       });
     });
