@@ -62,7 +62,16 @@ async function run() {
       }
     };
 
-   
+    // 2. Verify HR Middleware (requires verifyToken first)
+    const verifyHR = async (req, res, next) => {
+      const email = req.decoded.email;
+      const user = await usersCollection.findOne({ email });
+      if (!user || user.role !== 'hr') {
+        return res.status(403).send({ message: 'forbidden access' });
+      }
+      next();
+    };
+
     // --- Routes ---
 
     // 1. Authentication & Users
