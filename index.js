@@ -658,7 +658,7 @@ async function run() {
 
     // Ping
     app.get('/', (req, res) => {
-      res.send('AssetVerse Server is running');
+      res.send('Asset Sync Server is running');
     });
 
   } catch (error) {
@@ -670,5 +670,5 @@ run().catch(console.dir);
 
 
 app.listen(port, () => {
-  console.log(`AssetVerse is running on port ${port}`);
+  console.log(`Asset Sync is running on port ${port}`);
 });

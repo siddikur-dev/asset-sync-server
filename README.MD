@@ -81,8 +81,8 @@ edu-sync-server/
 
 ## 👨‍💻 Developer & Contact
 
-- **Portfolio:** [shihab-dev.web.app](https://shihab-dev.web.app/)
-- **LinkedIn:** [linkedin.com/in/shihab-dev](https://www.linkedin.com/in/shihab-dev/)
+- **Portfolio:** [siddikur-dev.web.app](https://siddikur-dev.web.app/)
+- **LinkedIn:** [linkedin.com/in/siddikur-dev](https://www.linkedin.com/in/siddikur-dev/)
 
 ---
 
