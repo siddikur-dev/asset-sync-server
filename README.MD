@@ -1,6 +1,7 @@
-# Edu Sync Server
+# Asset Sync Server
 
-This is the backend server for **Edu Sync**, a modern educational platform connecting students, tutors, and administrators. The server is built with Node.js and Express, providing RESTful APIs, authentication, and integration with the frontend client.
+AssetSync is a smart digital system designed to help companies manage all their physical assets—such as laptops, keyboards, monitors, chairs, and more—while keeping track of which employee is using which item.
+It eliminates the confusion, manual paperwork, and asset-loss issues often faced by growing organizations.
 
 ---
 
@@ -92,4 +93,5 @@ This project is licensed under the MIT License.
 
 ---
 
-> **Edu Sync Server** – Powering the Edu Sync platform backend.
+> **Asset
+Sync Server** – Powering the Edu Sync platform backend.
